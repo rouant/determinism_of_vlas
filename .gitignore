@@ -1,0 +1,6 @@
+*.out
+*_checkpoint
+*_settings
+*.metrics
+*.txt
+results/*
