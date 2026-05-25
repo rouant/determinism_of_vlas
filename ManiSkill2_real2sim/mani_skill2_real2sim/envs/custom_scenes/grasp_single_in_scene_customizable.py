@@ -158,10 +158,10 @@ class GraspSingleInSceneCustomizableEnv(CustomSceneEnv):
 
     def _additional_prepackaged_config_reset(self, options):
         # use prepackaged robot evaluation configs under visual matching setup
-        options["robot_init_options"] = {
-            "init_xy": [0.35, 0.20],
-            "init_rot_quat": [0, 0, 0, 1],
-        }
+        #options["robot_init_options"] = {
+        #    "init_xy": [0.35, 0.20],
+        #    "init_rot_quat": [0, 0, 0, 1],
+        #}
         new_urdf_version = self._episode_rng.choice(
             [
                 "",
@@ -338,7 +338,7 @@ class GraspSingleInSceneCustomizableEnv(CustomSceneEnv):
 
         # Move the robot far away to avoid collision
         # The robot should be initialized later in _initialize_agent (in base_env.py)
-        self.agent.robot.set_pose(sapien.Pose([-10, 0, 0]))
+        self.agent.robot.set_pose(sapien.Pose([-10, -0.35, 0]))
 
         # Lock rotation around x and y to let the target object fall onto the table
         self.obj.lock_motion(0, 0, 0, 1, 1, 0)

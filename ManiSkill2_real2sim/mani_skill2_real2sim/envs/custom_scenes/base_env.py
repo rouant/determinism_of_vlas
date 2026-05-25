@@ -6,6 +6,10 @@ import os
 import sapien.core as sapien
 from sapien.core import Pose
 import cv2
+#cv2.setNumThreads(0) # https://github.com/opencv/opencv/issues/5150#issuecomment-675019390
+#import multiprocessing as mp
+#mp.set_start_method('spawn') # https://github.com/opencv/opencv/issues/5150#issuecomment-575001521
+#from PIL import Image
 
 from mani_skill2_real2sim import ASSET_DIR, format_path
 from mani_skill2_real2sim.utils.io_utils import load_json
@@ -112,7 +116,12 @@ class CustomSceneEnv(BaseEnv):
                     "If you installed this repo through 'pip install .' , "
                     "you can download this directory https://github.com/simpler-env/ManiSkill2_real2sim/tree/main/data to get the real-world image overlay assets. "
                 )
+            #self.rgb_overlay_img = np.array(Image.open(rgb_overlay_path).convert('RGB'))
+            #print(self.rgb_overlay_img.shape)
+            #self.rgb_overlay_img = self.rgb_overlay_img / 255
+            #print(self.rgb_overlay_img.shape)
             self.rgb_overlay_img = cv2.cvtColor(cv2.imread(rgb_overlay_path), cv2.COLOR_BGR2RGB) / 255 # (H, W, 3); float32
+            
         else:
             self.rgb_overlay_img = None
         if not isinstance(rgb_overlay_cameras, list):
@@ -318,7 +327,6 @@ class CustomSceneEnv(BaseEnv):
             else:
                 init_x, init_y = 0.0, 0.0
             robot_init_xyz = [init_x, init_y, robot_init_height]
-        
         self.agent.robot.set_pose(sapien.Pose(robot_init_xyz, robot_init_rot_quat))
         
     def _register_cameras(self):
@@ -389,6 +397,11 @@ class CustomSceneEnv(BaseEnv):
                 
                 # perform overlay on the RGB observation image
                 rgb_overlay_img = cv2.resize(self.rgb_overlay_img, (obs['image'][camera_name]['Color'].shape[1], obs['image'][camera_name]['Color'].shape[0]))
+                #print(f"pre resize {self.rgb_overlay_img.shape}")
+                #rgb_overlay_img = Image.fromarray((self.rgb_overlay_img * 255).astype(np.uint8))
+                #rgb_overlay_img = rgb_overlay_img.resize((obs['image'][camera_name]['Color'].shape[1], obs['image'][camera_name]['Color'].shape[0]))
+                #rgb_overlay_img = np.array(rgb_overlay_img) / 255
+                #print(rgb_overlay_img)
                 if 'debug' not in self.rgb_overlay_mode:
                     obs['image'][camera_name]['Color'][..., :3] = obs['image'][camera_name]['Color'][..., :3] * (1 - mask) + rgb_overlay_img * mask
                 else:

@@ -13,20 +13,49 @@ from mani_skill2_real2sim import ASSET_DIR
 from .base_env import CustomBridgeObjectsInSceneEnv, CustomOtherObjectsInSceneEnv
 from .move_near_in_scene_customizable import MoveNearInSceneCustomizableEnv
 
+from mani_skill2_real2sim.utils.sapien_utils import (
+    get_actor_state,
+    get_articulation_state,
+    set_actor_state,
+    set_articulation_state,
+)
+
 
 class PutOnInSceneCustomizableEnv(MoveNearInSceneCustomizableEnv):
 
+    #CUSTOM
+    def get_coordinates(self):
+        coords = {}
+        for actor in self._actors[1:]:
+            coords[actor.name] = [float(x) for x  in get_actor_state(actor)[0:3]]
+        return coords
+    
     def reset(self, *args, **kwargs):
-        self.consecutive_grasp = 0
+        self.continuous_grasp = 0
+        self.consecutive_grip_frozen = 0
+        self.previous_gripper = []
+        self.previous_poses = []
+        self.total_distances = []
         return super().reset(*args, **kwargs)
 
     def _initialize_episode_stats(self):
         self.episode_stats = OrderedDict(
+            most_moved_is_correct=False,
+            most_moved_is_wrong=False,
+            correct_obj_grasped=False,
+            continuous_grasp=False,
+            correct_on_target=False,
+            other_on_target=False,
+            bumped_wrong_obj=False,
             moved_correct_obj=False,
             moved_wrong_obj=False,
-            is_src_obj_grasped=False,
-            consecutive_grasp=False,
-            src_on_target=False,
+
+            bumped_target=False,
+            moved_target=False,
+            
+            no_obj_moved=False,
+            gripper_froze=False,
+            bumped_correct_obj=False,
         )
 
     def _set_model(self, model_ids, model_scales):
@@ -45,6 +74,38 @@ class PutOnInSceneCustomizableEnv(MoveNearInSceneCustomizableEnv):
         source_obj_pose = self.source_obj_pose
         target_obj_pose = self.target_obj_pose
 
+        # total distance moved
+        if len(self.total_distances) == 0:
+            # init total_distances to zero
+            self.total_distances = np.zeros(len(self.episode_objs))
+        if len(self.previous_poses) > 0:
+            distances = [np.linalg.norm(
+                previous.p[:2] - current.pose.p[:2]
+            ) for current, previous in zip(self.episode_objs, self.previous_poses)]
+            #print(f"distances: {distances}")
+            self.total_distances += distances
+        
+        # distance affectation robust to objs order
+        source_distance = 0
+        target_distance = 0
+        others_distances = []
+        for idx, obj in enumerate(self.episode_objs):
+            if obj.name == self.episode_source_obj.name:
+                source_distance = self.total_distances[idx]
+                continue
+            if obj.name == self.episode_target_obj.name:
+                target_distance = self.total_distances[idx]
+                continue
+            others_distances.append(self.total_distances[idx])
+        # set for next loop
+        self.previous_poses = [obj.pose for obj in self.episode_objs]
+        #print(f"source, target, others distance: {source_distance}, {target_distance}, {others_distances}")
+
+        target_obj_xy_move_dist = np.linalg.norm(
+            self.episode_target_obj_xyz_after_settle[:2] - self.target_obj_pose.p[:2]
+        )
+        #print(f"target_obj_xy_move_dist: {target_obj_xy_move_dist}")
+        
         # whether moved the correct object
         source_obj_xy_move_dist = np.linalg.norm(
             self.episode_source_obj_xyz_after_settle[:2] - self.source_obj_pose.p[:2]
@@ -55,23 +116,83 @@ class PutOnInSceneCustomizableEnv(MoveNearInSceneCustomizableEnv):
         ):
             if obj.name == self.episode_source_obj.name:
                 continue
+            if obj.name == self.episode_target_obj.name:
+                continue
             other_obj_xy_move_dist.append(
                 np.linalg.norm(obj_xyz_after_settle[:2] - obj.pose.p[:2])
             )
-        moved_correct_obj = (source_obj_xy_move_dist > 0.03) and (
-            all([x < source_obj_xy_move_dist for x in other_obj_xy_move_dist])
-        )
-        moved_wrong_obj = any([x > 0.03 for x in other_obj_xy_move_dist]) and any(
-            [x > source_obj_xy_move_dist for x in other_obj_xy_move_dist]
+        #most_moved_is_correct = (source_obj_xy_move_dist > 0.03) and (
+        #    target_obj_xy_move_dist < source_obj_xy_move_dist) and (
+        #    all([x < source_obj_xy_move_dist for x in other_obj_xy_move_dist])
+        #)
+        most_moved_is_correct = (source_distance > 0.03) and (
+            target_distance < source_distance) and (
+            all([x < source_distance for x in others_distances])
         )
 
-        # whether the source object is grasped
-        is_src_obj_grasped = self.agent.check_grasp(self.episode_source_obj)
-        if is_src_obj_grasped:
-            self.consecutive_grasp += 1
+        # CUSTOM
+        # moved_correct_obj = (source_obj_xy_move_dist > 0.03)
+        # moved_wrong_obj = any([x > 0.03 for x in other_obj_xy_move_dist])
+        # bumped_correct_obj = (source_obj_xy_move_dist > 0.001)
+        
+        # bumped_target = (target_obj_xy_move_dist > 0.001)
+        # moved_target = (target_obj_xy_move_dist > 0.03)
+        
+        # most_moved_is_wrong = any([x > 0.03 for x in other_obj_xy_move_dist]) and any(
+        #     [x > source_obj_xy_move_dist for x in other_obj_xy_move_dist]
+        # )
+        
+        # bumped_wrong_obj = any([x > 0.001 for x in other_obj_xy_move_dist])
+        # no_obj_moved = (source_obj_xy_move_dist < 0.03) and (target_obj_xy_move_dist < 0.03) and all(
+        #     [x < 0.03 for x in other_obj_xy_move_dist]
+        # )
+        moved_correct_obj = (source_distance > 0.03)
+        moved_wrong_obj = any([x > 0.03 for x in others_distances])
+        bumped_correct_obj = (source_distance > 0.001)
+
+        bumped_target = (target_distance > 0.001)
+        moved_target = (target_distance > 0.03)
+        
+        most_moved_is_wrong = any([x > 0.03 for x in others_distances]) and any(
+            [x > source_distance for x in others_distances]
+        )
+        
+        bumped_wrong_obj = any([x > 0.001 for x in others_distances])
+        no_obj_moved = (source_distance < 0.03) and (target_distance < 0.03) and all(
+            [x < 0.03 for x in others_distances]
+        )
+
+        # whether any item fell off the table
+        objects = self.episode_objs
+        zs = [o.pose.p[2] for o in objects]
+        any_fell_off = any([z < 0.8 for z in zs])
+
+        # whether the gripper froze
+        gripper_froze = False
+        current_gripper_coords = self.agent.ee_pose.p # [x,y,z]
+        #print(f"current_gripper_coords:{current_gripper_coords}")
+        if len(self.previous_gripper) == 0:
+            self.previous_gripper = current_gripper_coords
         else:
-            self.consecutive_grasp = 0
-        consecutive_grasp = self.consecutive_grasp >= 5
+            #print(f"previous_gripper:{self.previous_gripper}")
+            dist = np.linalg.norm(self.previous_gripper - current_gripper_coords)
+            #print(f"dist:{dist}")
+            if dist < 0.03 :
+                self.consecutive_grip_frozen += 1
+                if self.consecutive_grip_frozen > 10:
+                    gripper_froze = True
+            else:
+                self.consecutive_grip_frozen = 0
+        self.previous_gripper = current_gripper_coords
+                    
+
+        # whether the source object is grasped
+        correct_obj_grasped = self.agent.check_grasp(self.episode_source_obj)
+        if correct_obj_grasped:
+            self.continuous_grasp += 1
+        else:
+            self.continuous_grasp = 0
+        continuous_grasp = self.continuous_grasp >= 5
 
         # whether the source object is on the target object based on bounding box position
         tgt_obj_half_length_bbox = (
@@ -90,7 +211,7 @@ class PutOnInSceneCustomizableEnv(MoveNearInSceneCustomizableEnv):
                 offset[2] - tgt_obj_half_length_bbox[2] - src_obj_half_length_bbox[2]
                 <= z_flag_required_offset
         )
-        src_on_target = xy_flag and z_flag
+        correct_on_target = xy_flag and z_flag
 
         if success_require_src_completely_on_target:
             # whether the source object is on the target object based on contact information
@@ -117,26 +238,105 @@ class PutOnInSceneCustomizableEnv(MoveNearInSceneCustomizableEnv):
                         # the object has contact with an actor other than the robot link or the target object, so the object is not yet put on the target object
                         flag = False
                         break
-            src_on_target = src_on_target and flag
+            correct_on_target = correct_on_target and flag
+        
+        success = correct_on_target
 
-        success = src_on_target
+        # other items on the plate
+        other_on_target = False
+        tgt_obj_half_length_bbox = (
+                self.episode_target_obj_bbox_world / 2
+        ) 
+        
+        for model_id, model_pose, model_bbox in zip(
+                self.episode_model_ids[2:], 
+            [o.pose for o in self.episode_objs][2:], 
+             self.episode_model_bbox_sizes[2:]
+        ):
+            
+            bbox_world = quat2mat(model_pose.q) @ model_bbox
+            #print(f"bbox_world: {bbox_world}")
+            obj_half_length_bbox = bbox_world / 2
+            pos_obj = model_pose.p
+            pos_tgt = target_obj_pose.p
+            offset = pos_obj - pos_tgt
+            xy_flag = (
+                    np.linalg.norm(offset[:2])
+                    <= np.linalg.norm(tgt_obj_half_length_bbox[:2]) + 0.003
+            )
+            z_flag = (offset[2] > 0) and (
+                    offset[2] - tgt_obj_half_length_bbox[2] - obj_half_length_bbox[2]
+                    <= z_flag_required_offset
+            )
+            #print(f"z_offset: {offset[2] - tgt_obj_half_length_bbox[2] - obj_half_length_bbox[2]}")
+            #print(f"xy_offset: {np.linalg.norm(offset[:2])}")
+            #print(f"xy_required_offset: {np.linalg.norm(tgt_obj_half_length_bbox[:2]) + 0.003}")
+            #print(f"xy_flag: {xy_flag}")
+            #print(f"z_flag_required_offset: {z_flag_required_offset}")
+            other_on_target = other_on_target or (xy_flag and z_flag)
+        
 
+        self.episode_stats["most_moved_is_correct"] = most_moved_is_correct
         self.episode_stats["moved_correct_obj"] = moved_correct_obj
+        self.episode_stats["bumped_correct_obj"] = (
+                self.episode_stats["bumped_correct_obj"] or bumped_correct_obj
+        )
+        
+        self.episode_stats["most_moved_is_wrong"] = most_moved_is_wrong
         self.episode_stats["moved_wrong_obj"] = moved_wrong_obj
-        self.episode_stats["src_on_target"] = src_on_target
-        self.episode_stats["is_src_obj_grasped"] = (
-                self.episode_stats["is_src_obj_grasped"] or is_src_obj_grasped
+        self.episode_stats["bumped_wrong_obj"] = (
+                self.episode_stats["bumped_wrong_obj"] or bumped_wrong_obj
         )
-        self.episode_stats["consecutive_grasp"] = (
-                self.episode_stats["consecutive_grasp"] or consecutive_grasp
+
+        self.episode_stats["moved_target"] = (
+                self.episode_stats["moved_target"] or moved_target
         )
+        self.episode_stats["bumped_target"] = (
+                self.episode_stats["bumped_target"] or bumped_target
+        )
+
+        self.episode_stats["correct_obj_grasped"] = (
+                self.episode_stats["correct_obj_grasped"] or correct_obj_grasped
+        )
+        self.episode_stats["continuous_grasp"] = (
+                self.episode_stats["continuous_grasp"] or continuous_grasp
+        )
+        
+        self.episode_stats["correct_on_target"] = correct_on_target
+        self.episode_stats["other_on_target"] = (
+                self.episode_stats["other_on_target"] or other_on_target
+        )
+
+        self.episode_stats["any_fell_off"] = any_fell_off
+        self.episode_stats["no_obj_moved"] = no_obj_moved
+        self.episode_stats["gripper_froze"] = (
+                self.episode_stats["gripper_froze"] or gripper_froze
+        )
+        
+        
 
         return dict(
+            most_moved_is_correct=most_moved_is_correct,
             moved_correct_obj=moved_correct_obj,
+            bumped_correct_obj=bumped_correct_obj,
+
+            most_moved_is_wrong=most_moved_is_wrong,
             moved_wrong_obj=moved_wrong_obj,
-            is_src_obj_grasped=is_src_obj_grasped,
-            consecutive_grasp=consecutive_grasp,
-            src_on_target=src_on_target,
+            bumped_wrong_obj=bumped_wrong_obj,
+
+            moved_target=moved_target,
+            bumped_target=bumped_target,
+            
+            correct_obj_grasped=correct_obj_grasped,
+            continuous_grasp=continuous_grasp,
+            
+            correct_on_target=correct_on_target,
+            other_on_target=other_on_target,
+
+            any_fell_off=any_fell_off,
+            no_obj_moved=no_obj_moved,
+            gripper_froze=gripper_froze,
+            
             episode_stats=self.episode_stats,
             success=success,
         )

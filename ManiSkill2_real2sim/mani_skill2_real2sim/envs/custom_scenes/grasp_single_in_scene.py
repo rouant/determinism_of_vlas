@@ -515,6 +515,10 @@ class GraspSingleCustomInSceneEnv(GraspSingleInSceneEnv, CustomOtherObjectsInSce
         return task_description
 
 
+
+
+
+
 @register_env("GraspSingleCustomOrientationInScene-v0", max_episode_steps=80)
 class GraspSingleCustomOrientationInSceneEnv(GraspSingleCustomInSceneEnv):
     def __init__(

@@ -113,7 +113,7 @@ if __name__ == '__main__':
     #else:
     #    image_dir = None
 
-    for idx in tqdm(range(round(tasks["num"]/2))):
+    for idx in tqdm(range(round(tasks["num"]))):
         if args.resume and os.path.exists(result_dir + f"/allMetrics/{idx}/" + '/log.json'):  # if resume allowed then skip the finished runs.
             continue
         options = tasks[str(idx)]
@@ -137,10 +137,10 @@ if __name__ == '__main__':
         
 
         # Execution Variability
-        serialized_values = [v.tolist() if isinstance(v, np.ndarray) else v for v in uncertainty_variability]
-        file_path = result_dir + f"/allMetrics/{idx}/" + f"Execution_Variability.json"
-        with open(file_path, "w") as f:
-            json.dump(serialized_values, f, indent=4)
+        #serialized_values = [v.tolist() if isinstance(v, np.ndarray) else v for v in uncertainty_variability]
+        #file_path = result_dir + f"/allMetrics/{idx}/" + f"Execution_Variability.json"
+        #with open(file_path, "w") as f:
+        #    json.dump(serialized_values, f, indent=4)
 
 
         # Optimal trejectory

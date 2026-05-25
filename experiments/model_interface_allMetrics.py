@@ -80,7 +80,7 @@ class VLAInterface:
             from simpler_env.policies.openvla.openvla_model import OpenVLAInference
             self.model = OpenVLAInference(model_type='../checkpoints/openvla-7b', policy_setup=self.policy_setup)
             #self.followUpModel = OpenVLAInference(model_type=model_name, policy_setup=self.policy_setup)
-            self.variability_models=[OpenVLAInference(model_type='../checkpoints/openvla-7b' , policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
+            #self.variability_models=[OpenVLAInference(model_type='../checkpoints/openvla-7b' , policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
             
         elif "pi0" in model_name:
             from simpler_env.policies.lerobotpi.pi0_or_fast import LerobotPiFastInference
@@ -90,25 +90,27 @@ class VLAInterface:
                 model_path = "../checkpoints/lerobot-pi0-fractal"
 
             self.model = LerobotPiFastInference(saved_model_path=model_path, policy_setup=self.policy_setup)
-            self.variability_models=[LerobotPiFastInference(saved_model_path=model_path, policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
+            #self.variability_models=[LerobotPiFastInference(saved_model_path=model_path, policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
             #self.followUpModel = LerobotPiFastInference(saved_model_path=model_path, policy_setup=self.policy_setup)
         elif "spatialvla" in model_name:
             from simpler_env.policies.spatialvla.spatialvla_model import SpatialVLAInference
 
             self.model = SpatialVLAInference(saved_model_path="../checkpoints/spatialvla-4b-mix-224-pt",policy_setup=self.policy_setup)
-            self.variability_models=[SpatialVLAInference(saved_model_path="../checkpoints/spatialvla-4b-mix-224-pt",policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
+            # set VARIABILITY in uncertainty_metrics.py
+            # self.variability_models=[SpatialVLAInference(saved_model_path="../checkpoints/spatialvla-4b-mix-224-pt",policy_setup=self.policy_setup) for i in range(0,uncerMetrics.VARIABILITY)]
+            #self.variability_models=[SpatialVLAInference(saved_model_path="../checkpoints/spatialvla-4b-mix-224-pt",policy_setup=self.policy_setup) for i in range(0,1)]
             
             #self.followUpModel = SpatialVLAInference(model_type=model_name, policy_setup=self.policy_setup)
         else:
             raise ValueError(model_name)
 
-    def run_interface(self, seed=None, options=None, task_type=None):
+    def run_interface(self, seed=None, options=None, task_type=None, prompt=None):
         
         env = simpler_env.make(self.task)
         obs, reset_info = env.reset(seed=seed, options=options)
-        instruction = env.unwrapped.get_language_instruction()
+        instruction = prompt #env.unwrapped.get_language_instruction()
         self.model.reset(instruction)
-        [self.variability_models[i].reset(instruction) for i in range(0, len(self.variability_models))]
+        # [self.variability_models[i].reset(instruction) for i in range(0, len(self.variability_models))]
         image = get_image_from_maniskill2_obs_dict(env, obs)  # np.ndarray of shape (H, W, 3), uint8
         images = [image]
         predicted_terminated, success, truncated = False, False, False
@@ -137,6 +139,8 @@ class VLAInterface:
         traj_uncerActions = np.array([])
         traj_uncerTcp = []
         tcp_pose = obs['extra']['tcp_pose']
+        gripper_distances = []
+        obj_distances = []
 
         if task_type == "grasp":
                 
@@ -202,12 +206,12 @@ class VLAInterface:
             exec_times_dict['token-based'].append(time_execution2 - time_execution)
             
             # Execution variability
-            result = uncerMetrics.compute_execution_variability(self.variability_models, image, env.action_space, instruction, obs, self.model_name)
-            variability.append(result)
+            # result = uncerMetrics.compute_execution_variability(self.variability_models, image, env.action_space, instruction, obs, self.model_name)
+            # variability.append(result)
             
             time_execution3 = time.time()
-            print(f"Time to calculate the execution variability: {time_execution3 - time_execution2}")
-            exec_times_dict['execution_variability'].append(time_execution3 - time_execution2)
+            # print(f"Time to calculate the execution variability: {time_execution3 - time_execution2}")
+            # exec_times_dict['execution_variability'].append(time_execution3 - time_execution2)
             # Optimal Trajectory
             if task_type == "grasp":
                 object_pose = env.unwrapped.obj_pose
@@ -216,15 +220,18 @@ class VLAInterface:
                 object_pose = env.unwrapped.source_obj_pose
                 final_pose = env.unwrapped.target_obj_pose
 
+            obj_distances.append(np.linalg.norm(object_pose.p - final_pose.p))
             if task_type == "grasp":
-
                 optimal_traj.append(np.abs(np.linalg.norm(tcp_pose[:3] - object_pose.p))/total_dist)
+                gripper_distances.append(np.linalg.norm(tcp_pose[:3] - object_pose.p))
 
             elif task_type == "put-in" or task_type == "put-on":
                 if info["is_src_obj_grasped"]:
                     optimal_traj.append(np.abs(np.linalg.norm(tcp_pose[:3] - final_pose.p))/ total_dist)
+                    gripper_distances.append(np.abs(np.linalg.norm(tcp_pose[:3] - final_pose.p)))
                 else:
                     optimal_traj.append((np.abs(np.linalg.norm(tcp_pose[:3] - object_pose.p)) + np.abs(np.linalg.norm(object_pose.p - final_pose.p)))/total_dist)
+                    gripper_distances.append(np.abs(np.linalg.norm(tcp_pose[:3] - object_pose.p)) + np.abs(np.linalg.norm(object_pose.p - final_pose.p)))
 
             else:
                 if np.abs(np.linalg.norm(tcp_pose[:3] - object_pose.p)) < 0.04:
@@ -286,7 +293,9 @@ class VLAInterface:
         print(f"Episode success: {success}")
         env.close()
         del env
-        return images, episode_stats, actions, tcp_poses, token_based_dict, variability, optimal_traj, traj_inst_gradients, traj_instability, traj_instability_tcp, exec_times_dict
+        gripper_distances = [float(v) for v in gripper_distances]
+        obj_distances = [float(v) for v in obj_distances]
+        return images, episode_stats, actions, tcp_poses, token_based_dict, variability, optimal_traj, traj_inst_gradients, traj_instability, traj_instability_tcp, exec_times_dict, gripper_distances, obj_distances
 
 
 class VLAInterfaceLM(VLAInterface):

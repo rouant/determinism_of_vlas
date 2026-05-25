@@ -9,7 +9,7 @@ import uncertainty.utils as uncerUtils
 
 
 
-VARIABILITY=4
+VARIABILITY=0
 def compute_position_instability(actions: np.ndarray) -> np.ndarray:
     action_array = np.array([
         np.concatenate((
@@ -135,7 +135,7 @@ def compute_execution_variability(variability_models, image, action_space, instr
     actions=[]
 
     for i in range(0, len(variability_models)):
-        if "pi0" in model_name:
+        if "pi0" or "gr00t" in model_name:
             raw_action, action = variability_models[i].step(image, instruction, eef_pos=obs["agent"]["eef_pos"])
         elif "spatialvla" in model_name:
             raw_action, action = variability_models[i].step(image, instruction)

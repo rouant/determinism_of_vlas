@@ -24,7 +24,7 @@ conda_env=$1
 specific_model=$2
 
 # Conda init (adjust this if needed)
-source ~/anaconda3/etc/profile.d/conda.sh
+source /opt/conda/etc/profile.d/conda.sh
 
 # Activate conda environment
 echo -e "${BLUE}➤ Activating Conda environment: ${GREEN}${conda_env}${NC}"
@@ -42,10 +42,12 @@ fi
 
 # Define datasets
 datasets=(
-  t-grasp_n-1000_o-m3_s-2498586606.json
-  t-move_n-1000_o-m3_s-2263834374.json
-  t-put-in_n-1000_o-m3_s-2905191776.json
-  t-put-on_n-1000_o-m3_s-2593734741.json
+  t-grasp_n-10_o-m3_s-1234666666.json
+  # t-grasp_n-36_o-m3_s-1234666666.json
+  #t-grasp_n-1000_o-m3_s-2498586606.json
+  #t-move_n-1000_o-m3_s-2263834374.json
+  #t-put-in_n-1000_o-m3_s-2905191776.json
+  #t-put-on_n-1000_o-m3_s-2593734741.json
 )
 
 # Start banner
