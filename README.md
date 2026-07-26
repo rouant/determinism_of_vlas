@@ -15,7 +15,7 @@ University of Namur, Namur, Belgium<sup>1</sup>, National Institute of Informati
 
 ## Data Availability
 
-Testing scenes are generated and evaluated through the scripts found under '/experiments' with seed {4200, 4201, 5000, 6000}.
+Testing scenes are generated and evaluated through the scripts found under '/experiments' with seed (4200, 4201, 5000, 6000).
 
 
 # The base of this project was forked from [VLA_UQ](https://github.com/pablovalle/VLA_UQ)
@@ -176,7 +176,7 @@ cp modeling_spatialvla spatialvla-4b
 ```
 
 ### Gr00t N1
-Launch the models separately for SimplerENV following the instruction of the [original repo]{https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/examples/SimplerEnv/README.md}
+Launch the models separately for SimplerENV following the instruction of the [original repo](https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/examples/SimplerEnv/README.md)
 
 Activate the conda environment:
 ```
@@ -185,7 +185,7 @@ conda activate <env_name>
 
 Follow earlier instructions for pi0
 
-[Install client side Gr00t N1's requirements]{https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/getting_started/policy.md#integrating-the-gr00t-16-client-into-your-deployment-pipeline}
+[Install client side Gr00t N1's requirements](https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/getting_started/policy.md#integrating-the-gr00t-16-client-into-your-deployment-pipeline)
 
 ## For Blackwell usage
 At the end of the earlier instructions for each model:
