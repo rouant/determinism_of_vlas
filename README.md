@@ -1,18 +1,24 @@
 <div align="center">
 
-# Evaluating Uncertainty and Quality of Visual Language Action-enabled Robots
-Uncertainty and Quality metrics specifically designed for VLA models for robotic manipulation tasks
+# Assessing the Determinism of VLAs for Robotic Tasks
 
-[Pablo Valle](https://scholar.google.com/citations?user=-3y0BlAAAAAJ&hl=en)<sup>1</sup>, [Chengjie Lu](https://scholar.google.com/citations?user=fwAwgngAAAAJ&hl=en&oi=ao)<sup>2</sup>, [Shaukat Ali](https://scholar.google.com/citations?user=S_UVLhUAAAAJ&hl=en)<sup>2</sup>, [Aitor Arrieta](https://scholar.google.com/citations?user=ft06jF4AAAAJ&hl=en)<sup>1</sup></br>
-Mondragon Unibertsitatea<sup>1</sup>, Simula Research Laboratory<sup>2</sup>
+Antonin Rousseau<sup>1</sup>,
+Deyun Lyu<sup>2</sup>,
+Paolo Arcaini<sup>2</sup>,
+Fuyuki Ishikawa<sup>2</sup>,
+Gilles Perrouin<sup>1</sup>
+</br>
+University of Namur, Namur, Belgium<sup>1</sup>, National Institute of Informatics, Tokyo, Japan<sup>2</sup>
 
 
 </div>
 
 ## Data Availability
 
-Our generated testing scenes is provided under ``data/`` in json files. To reproduce our experiment results, one can proceed to the following installation and replication guides. We also provide all the results in the folloing [Zenodo Package](https://doi.org/10.5281/zenodo.16315133)
+Testing scenes are generated and evaluated through the scripts found under '/experiments' with seed {4200, 4201, 5000, 6000}.
 
+
+# The base of this project was forked from [VLA_UQ](https://github.com/pablovalle/VLA_UQ)
 
 ## Prerequisites:
 - CUDA version >=12.
@@ -169,20 +175,42 @@ cd {this_repo}/checkpoints
 cp modeling_spatialvla spatialvla-4b
 ```
 
+### Gr00t N1
+Launch the models separately for SimplerENV following the instruction of the [original repo]{https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/examples/SimplerEnv/README.md}
+
+Activate the conda environment:
+```
+conda activate <env_name>
+```
+
+Follow earlier instructions for pi0
+
+[Install client side Gr00t N1's requirements]{https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/getting_started/policy.md#integrating-the-gr00t-16-client-into-your-deployment-pipeline}
+
+## For Blackwell usage
+At the end of the earlier instructions for each model:
+```
+pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+pip install -U https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.7.16/flash_attn-2.7.4%2Bcu128torch2.10-cp310-cp310-linux_x86_64.whl
+```
 
 ## Replication Package
 
-To reproduce experiment results with our same scenes (``data/``) follow the next steps:
-
-### Getting results for each model
+To reproduce experiment results, set the seed in the corresponding model script and launch:
 ```
 cd experiments
-./run_UQ_exp.sh <env_name> <model_name> #available models : openvla-7b, pi0, spatialvla-4b
+./approach_random_gr00t_start.sh
+```
+
+```
+cd experiments
+./approach_random_spatialvla_start.sh
 ```
 
 ### Analyzing results
 
-Inside [result_analysis](/result_analysis) folder we provide all the scripts we used to analyze the results for each of our RQs.
+We provide notebooks used for analysis under '/notebooks'.
 
 
 ## Troubleshooting
@@ -213,22 +241,15 @@ The dlimp library has not been maintained for a long time, so the TensorFlow ver
 If you found our paper/code useful in your research, please consider citing:
 
 ```
-@misc{valle2025evaluatinguncertaintyqualityvisual,
-      title={Evaluating Uncertainty and Quality of Visual Language Action-enabled Robots}, 
-      author={Pablo Valle and Chengjie Lu and Shaukat Ali and Aitor Arrieta},
-      year={2025},
-      eprint={2507.17049},
-      archivePrefix={arXiv},
-      primaryClass={cs.SE},
-      url={https://arxiv.org/abs/2507.17049}, 
-}
+
 ```
 
 ## Acknowledgement
 
+- [VLA_UQ](https://github.com/pablovalle/VLA_UQ)
 - [SimplerEnv](https://github.com/DelinQu/SimplerEnv-OpenVLA)
 - [ManiSkill2_real2sim](https://github.com/simpler-env/ManiSkill2_real2sim/tree/cd45dd27dc6bb26d048cb6570cdab4e3f935cc37)
 - [VLATest](https://github.com/ma-labo/VLATest)
 
 ## Contact
-For any related question, please contact Pablo Valle (pvalle@mondragon.edu) , Chengjie Lu (chengjielu@simula.no) , Shaukat Ali (shaukat@simula.no) , and Aitor Arrieta (aarrieta@mondragon.edu)
+

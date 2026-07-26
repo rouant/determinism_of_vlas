@@ -69,7 +69,7 @@ if __name__ == '__main__':
     SEED = args.seed # 4200
     MODEL_NAME = args.model
     # spatialvla, pi0, openvla, gr00t
-    PROBLEM_NAME = f"approach_random_additional_0distr_{MODEL_NAME}_seed-{SEED}"
+    PROBLEM_NAME = f"approach_random_{MODEL_NAME}_seed-{SEED}"
     IDENTIFIER = datetime.today().strftime('%m-%d_%H-%M')
     DIVERSITY = 3 # 1 for no DIVERSITY, 3 by default
     
