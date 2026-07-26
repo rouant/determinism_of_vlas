@@ -69,13 +69,13 @@ if __name__ == '__main__':
     SEED = args.seed # 4200
     MODEL_NAME = args.model
     # spatialvla, pi0, openvla, gr00t
-    PROBLEM_NAME = f"approach_random_{MODEL_NAME}_seed-{SEED}"
+    PROBLEM_NAME = f"approach_random_additional_0distr_{MODEL_NAME}_seed-{SEED}"
     IDENTIFIER = datetime.today().strftime('%m-%d_%H-%M')
     DIVERSITY = 3 # 1 for no DIVERSITY, 3 by default
     
     GEN_SIZE = 1
-    POP_STEP = 150
-    POP_SIZE = 600
+    POP_STEP = 30
+    POP_SIZE = 120
 
     np.random.seed(SEED)
     
@@ -94,6 +94,7 @@ if __name__ == '__main__':
     generated_shapes_src = np.random.randint(0, 5, size=(1, POP_SIZE))
     generated_shapes_tgt = np.random.randint(0, 2, size=(1, POP_SIZE))
     generated_nb = np.random.randint(0, 2, size=(4, POP_SIZE))
+    #generated_nb = np.zeros((4, POP_SIZE), dtype=np.int8)
     generated_xs = np.random.randint(0, 5, size=(6, POP_SIZE))
     generated_ys = np.random.randint(0, 8, size=(6, POP_SIZE))
     generated_coords = np.empty((12, POP_SIZE), dtype=generated_xs.dtype)
