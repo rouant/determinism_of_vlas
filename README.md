@@ -176,7 +176,7 @@ cp modeling_spatialvla spatialvla-4b
 ```
 
 ### Gr00t N1
-Launch the models separately for SimplerENV following the instruction of the [original repo](https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/examples/SimplerEnv/README.md)
+Launch the models separately for SimplerENV following the instructions of the [original repo](https://github.com/NVIDIA/Isaac-GR00T/blob/n1d6/examples/SimplerEnv/README.md) (GR00T N1.6 checkpoint was used in the paper)
 
 Activate the conda environment:
 ```
