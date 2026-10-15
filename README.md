@@ -1,6 +1,6 @@
 <div align="center">
 
-# Assessing the Determinism of VLAs for Robotic Tasks
+# A Preliminary Evaluation of the Non-determinism of VLAs for Robotic Tasks
 
 Antonin Rousseau<sup>1</sup>,
 Deyun Lyu<sup>2</sup>,
