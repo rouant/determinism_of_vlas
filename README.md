@@ -241,7 +241,15 @@ The dlimp library has not been maintained for a long time, so the TensorFlow ver
 If you found our paper/code useful in your research, please consider citing:
 
 ```
-
+@inproceedings{rousseau2026nondeterminismvla,
+title = "A Preliminary Evaluation of the Non-determinism of VLAs for Robotic Tasks",
+abstract = "Vision-Language-Action (VLA) models combine vision capabilities with language understanding to guide robots in a closed-loop to accomplish a given high-level task. Succession of VLAs stochastic inference steps may propagate deviations in generated actions within and across runs, leading to non-determinism. This paper investigates non-determinism for two VLAs interacting with a robotic arm in a simulated environment. We introduce specific metrics and find that VLAs exhibit contrasted non-deterministic behaviour both for task outcomes and positions of target objects throughout simulation steps. This study calls for systematic study of non-determinism in VLA testing.",
+author = "Antonin Rousseau and Deyun Lyu and Paolo Arcaini and Fuyuki Ishikawa and Gilles Perrouin",
+year = "2026",
+language = "English",
+booktitle = "37th IEEE International Symposium on Software Reliability Engineering Workshops (ISSREW)",
+publisher = "IEEE Computer Society Press",
+}
 ```
 
 ## Acknowledgement
@@ -251,5 +259,4 @@ If you found our paper/code useful in your research, please consider citing:
 - [ManiSkill2_real2sim](https://github.com/simpler-env/ManiSkill2_real2sim/tree/cd45dd27dc6bb26d048cb6570cdab4e3f935cc37)
 - [VLATest](https://github.com/ma-labo/VLATest)
 
-## Contact
 
